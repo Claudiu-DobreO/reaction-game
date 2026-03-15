@@ -1,23 +1,20 @@
 import { createReactionScene } from "./scene.js";
 
 const reactionZoneElement = document.getElementById("reaction-zone");
-const startButtonElement = document.getElementById("start-button");
 const resetButtonElement = document.getElementById("reset-button");
 const statusMessageElement = document.getElementById("status-message");
-const statusPanelElement = document.getElementById("status-panel");
 const reactionValueElement = document.getElementById("reaction-value");
-const reactionHintElement = document.getElementById("reaction-hint");
 const bestValueElement = document.getElementById("best-value");
 const lastValueElement = document.getElementById("last-value");
 const attemptCountElement = document.getElementById("attempt-count");
 const falseStartCountElement = document.getElementById("false-start-count");
 const sceneRootElement = document.getElementById("scene-root");
 
-const appScene = createReactionScene(sceneRootElement);
+const reactionScene = createReactionScene(sceneRootElement);
 
 const appState = {
   phase: "idle",
-  timeoutId: null,
+  signalTimeoutId: null,
   signalStartTime: null,
   attempts: [],
   falseStarts: 0,
@@ -26,37 +23,38 @@ const appState = {
 function getRandomDelayMilliseconds() {
   const minimumDelayMilliseconds = 2000;
   const maximumDelayMilliseconds = 5000;
+
   return Math.floor(
     minimumDelayMilliseconds +
       Math.random() * (maximumDelayMilliseconds - minimumDelayMilliseconds)
   );
 }
 
-function clearPendingSignalTimeout() {
-  if (appState.timeoutId !== null) {
-    window.clearTimeout(appState.timeoutId);
-    appState.timeoutId = null;
-  }
-}
-
 function formatReactionTime(milliseconds) {
   return `${Math.round(milliseconds)} ms`;
 }
 
+function clearPendingSignalTimeout() {
+  if (appState.signalTimeoutId !== null) {
+    window.clearTimeout(appState.signalTimeoutId);
+    appState.signalTimeoutId = null;
+  }
+}
+
 function updateStats() {
-  const lastAttempt = appState.attempts.at(-1) ?? null;
-  const bestAttempt =
-    appState.attempts.length > 0
-      ? Math.min(...appState.attempts)
-      : null;
+  const lastAttemptMilliseconds = appState.attempts.at(-1) ?? null;
+  const bestAttemptMilliseconds =
+    appState.attempts.length > 0 ? Math.min(...appState.attempts) : null;
 
-  lastValueElement.textContent = lastAttempt
-    ? formatReactionTime(lastAttempt)
-    : "-- ms";
+  lastValueElement.textContent =
+    lastAttemptMilliseconds !== null
+      ? formatReactionTime(lastAttemptMilliseconds)
+      : "-- ms";
 
-  bestValueElement.textContent = bestAttempt
-    ? formatReactionTime(bestAttempt)
-    : "-- ms";
+  bestValueElement.textContent =
+    bestAttemptMilliseconds !== null
+      ? formatReactionTime(bestAttemptMilliseconds)
+      : "-- ms";
 
   attemptCountElement.textContent = String(appState.attempts.length);
   falseStartCountElement.textContent = String(appState.falseStarts);
@@ -64,10 +62,16 @@ function updateStats() {
 
 function updateReactionZoneStateClass(phase) {
   reactionZoneElement.classList.remove(
+    "is-idle",
     "is-waiting",
     "is-ready",
-    "is-result"
+    "is-result",
+    "is-false-start"
   );
+
+  if (phase === "idle") {
+    reactionZoneElement.classList.add("is-idle");
+  }
 
   if (phase === "waiting") {
     reactionZoneElement.classList.add("is-waiting");
@@ -77,18 +81,27 @@ function updateReactionZoneStateClass(phase) {
     reactionZoneElement.classList.add("is-ready");
   }
 
-  if (phase === "result" || phase === "false-start") {
+  if (phase === "result") {
     reactionZoneElement.classList.add("is-result");
+  }
+
+  if (phase === "false-start") {
+    reactionZoneElement.classList.add("is-false-start");
   }
 }
 
-function updateStatusStyle(phase) {
+function updateStatusMessageStyle(phase) {
   statusMessageElement.classList.remove(
+    "status-idle",
     "status-waiting",
     "status-ready",
     "status-result",
     "status-false-start"
   );
+
+  if (phase === "idle") {
+    statusMessageElement.classList.add("status-idle");
+  }
 
   if (phase === "waiting") {
     statusMessageElement.classList.add("status-waiting");
@@ -110,33 +123,27 @@ function updateStatusStyle(phase) {
 function setPhase(nextPhase) {
   appState.phase = nextPhase;
   updateReactionZoneStateClass(nextPhase);
-  updateStatusStyle(nextPhase);
-  appScene.setState(nextPhase);
+  updateStatusMessageStyle(nextPhase);
+  reactionScene.setState(nextPhase);
 }
 
 function renderIdleState() {
   setPhase("idle");
   statusMessageElement.textContent =
-    "Press start, wait for green, then click anywhere in the test area.";
+    "Click anywhere in the panel to start. Wait for green, then click again as fast as you can.";
   reactionValueElement.textContent = "-- ms";
-  reactionHintElement.textContent = "Click “Start Test” to begin";
-  startButtonElement.textContent = "Start Test";
 }
 
 function renderWaitingState() {
   setPhase("waiting");
   statusMessageElement.textContent =
-    "Wait for the green signal. Clicking early counts as a false start.";
+    "Wait for green. Clicking early counts as a false start.";
   reactionValueElement.textContent = "-- ms";
-  reactionHintElement.textContent = "Wait for green";
-  startButtonElement.textContent = "Running...";
 }
 
 function renderReadyState() {
   setPhase("ready");
-  statusMessageElement.textContent =
-    "Click now.";
-  reactionHintElement.textContent = "Click anywhere now";
+  statusMessageElement.textContent = "Click now.";
   reactionValueElement.textContent = "GO";
   appState.signalStartTime = performance.now();
 }
@@ -144,19 +151,15 @@ function renderReadyState() {
 function renderResultState(reactionTimeMilliseconds) {
   setPhase("result");
   statusMessageElement.textContent =
-    "Measured successfully. Start again for another attempt.";
+    "Measured successfully. Click the panel to start again.";
   reactionValueElement.textContent = formatReactionTime(reactionTimeMilliseconds);
-  reactionHintElement.textContent = "Press start to test again";
-  startButtonElement.textContent = "Start Again";
 }
 
 function renderFalseStartState() {
   setPhase("false-start");
   statusMessageElement.textContent =
-    "False start. You clicked before the signal appeared.";
+    "Too soon. Click the panel to try again.";
   reactionValueElement.textContent = "Too Soon";
-  reactionHintElement.textContent = "Press start to retry";
-  startButtonElement.textContent = "Try Again";
 }
 
 function beginTest() {
@@ -167,8 +170,8 @@ function beginTest() {
 
   const signalDelayMilliseconds = getRandomDelayMilliseconds();
 
-  appState.timeoutId = window.setTimeout(() => {
-    appState.timeoutId = null;
+  appState.signalTimeoutId = window.setTimeout(() => {
+    appState.signalTimeoutId = null;
     renderReadyState();
   }, signalDelayMilliseconds);
 }
@@ -182,6 +185,8 @@ function handleSuccessfulReaction() {
     performance.now() - appState.signalStartTime;
 
   appState.attempts.push(reactionTimeMilliseconds);
+  appState.signalStartTime = null;
+
   updateStats();
   renderResultState(reactionTimeMilliseconds);
 }
@@ -190,11 +195,17 @@ function handleFalseStart() {
   clearPendingSignalTimeout();
   appState.signalStartTime = null;
   appState.falseStarts += 1;
+
   updateStats();
   renderFalseStartState();
 }
 
 function handleReactionZoneActivation() {
+  if (appState.phase === "idle") {
+    beginTest();
+    return;
+  }
+
   if (appState.phase === "waiting") {
     handleFalseStart();
     return;
@@ -202,11 +213,12 @@ function handleReactionZoneActivation() {
 
   if (appState.phase === "ready") {
     handleSuccessfulReaction();
+    return;
   }
-}
 
-function handleStartButtonClick() {
-  beginTest();
+  if (appState.phase === "result" || appState.phase === "false-start") {
+    beginTest();
+  }
 }
 
 function resetSession() {
@@ -233,8 +245,11 @@ function handleReactionZoneKeydown(event) {
   handleReactionZoneActivation();
 }
 
-startButtonElement.addEventListener("click", handleStartButtonClick);
-resetButtonElement.addEventListener("click", resetSession);
+resetButtonElement.addEventListener("click", (event) => {
+  event.stopPropagation();
+  resetSession();
+});
+
 reactionZoneElement.addEventListener("click", handleReactionZoneActivation);
 reactionZoneElement.addEventListener("keydown", handleReactionZoneKeydown);
 
@@ -243,5 +258,5 @@ renderIdleState();
 
 window.addEventListener("beforeunload", () => {
   clearPendingSignalTimeout();
-  appScene.destroy();
+  reactionScene.destroy();
 });

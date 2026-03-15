@@ -2,10 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Reaction Timer</title>
     <meta
       name="description"
@@ -22,49 +19,41 @@
   <body>
     <main class="app-shell">
       <section class="app-card">
-        <div class="scene-panel">
+        <section class="scene-panel">
           <div id="scene-root" class="scene-root" aria-hidden="true"></div>
 
-          <div class="overlay">
-            <p class="eyebrow">Reaction Timer</p>
-            <h1 class="app-title">Test your reaction speed</h1>
+          <div
+            class="reaction-zone"
+            id="reaction-zone"
+            role="button"
+            tabindex="0"
+            aria-label="Reaction test area"
+          ></div>
 
-            <div class="status-panel" id="status-panel">
-              <p class="status-label">Status</p>
-              <p class="status-message" id="status-message">
-                Press start, wait for green, then click anywhere in the test area.
-              </p>
-            </div>
+          <div class="scene-ui-layer">
+            <div class="scene-top-bar">
+              <div class="instruction-panel">
+                <p class="instruction-label">Instructions</p>
+                <p class="instruction-text" id="status-message">
+                  Click anywhere in the panel to start. Wait for green, then click again as fast as you can.
+                </p>
+              </div>
 
-            <div
-              class="reaction-zone"
-              id="reaction-zone"
-              role="button"
-              tabindex="0"
-              aria-label="Reaction test area"
-            >
-              <div class="reaction-readout">
-                <p class="readout-label">Reaction Time</p>
+              <div class="result-panel">
+                <p class="result-label">Reaction Time</p>
                 <p class="reaction-value" id="reaction-value">-- ms</p>
               </div>
+            </div>
 
-              <div class="reaction-hint" id="reaction-hint">
-                Click “Start Test” to begin
-              </div>
+            <div class="scene-bottom-bar">
+              <button class="secondary-button" id="reset-button" type="button">
+                Reset
+              </button>
             </div>
           </div>
-        </div>
+        </section>
 
         <aside class="control-panel">
-          <div class="control-group">
-            <button class="primary-button" id="start-button" type="button">
-              Start Test
-            </button>
-            <button class="secondary-button" id="reset-button" type="button">
-              Reset
-            </button>
-          </div>
-
           <div class="stats-grid">
             <article class="stat-card">
               <p class="stat-label">Best</p>
@@ -88,9 +77,7 @@
           </div>
 
           <div class="micro-copy">
-            <p>
-              Fair timing. Randomized signal delay. Immediate retry loop.
-            </p>
+            <p>Click panel to start. Fair randomized delay. Immediate replay loop.</p>
           </div>
         </aside>
       </section>
