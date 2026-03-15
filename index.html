@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Reaction Timer</title>
+    <meta
+      name="description"
+      content="A modern reaction timer portfolio project built with HTML, CSS, JavaScript, and Three.js."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="app-card">
+        <div class="scene-panel">
+          <div id="scene-root" class="scene-root" aria-hidden="true"></div>
+
+          <div class="overlay">
+            <p class="eyebrow">Reaction Timer</p>
+            <h1 class="app-title">Test your reaction speed</h1>
+
+            <div class="status-panel" id="status-panel">
+              <p class="status-label">Status</p>
+              <p class="status-message" id="status-message">
+                Press start, wait for green, then click anywhere in the test area.
+              </p>
+            </div>
+
+            <div
+              class="reaction-zone"
+              id="reaction-zone"
+              role="button"
+              tabindex="0"
+              aria-label="Reaction test area"
+            >
+              <div class="reaction-readout">
+                <p class="readout-label">Reaction Time</p>
+                <p class="reaction-value" id="reaction-value">-- ms</p>
+              </div>
+
+              <div class="reaction-hint" id="reaction-hint">
+                Click “Start Test” to begin
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="control-panel">
+          <div class="control-group">
+            <button class="primary-button" id="start-button" type="button">
+              Start Test
+            </button>
+            <button class="secondary-button" id="reset-button" type="button">
+              Reset
+            </button>
+          </div>
+
+          <div class="stats-grid">
+            <article class="stat-card">
+              <p class="stat-label">Best</p>
+              <p class="stat-value mono" id="best-value">-- ms</p>
+            </article>
+
+            <article class="stat-card">
+              <p class="stat-label">Last</p>
+              <p class="stat-value mono" id="last-value">-- ms</p>
+            </article>
+
+            <article class="stat-card">
+              <p class="stat-label">Attempts</p>
+              <p class="stat-value" id="attempt-count">0</p>
+            </article>
+
+            <article class="stat-card">
+              <p class="stat-label">False Starts</p>
+              <p class="stat-value" id="false-start-count">0</p>
+            </article>
+          </div>
+
+          <div class="micro-copy">
+            <p>
+              Fair timing. Randomized signal delay. Immediate retry loop.
+            </p>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
