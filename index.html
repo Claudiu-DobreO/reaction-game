@@ -8,6 +8,7 @@
       name="description"
       content="A modern reaction timer portfolio project built with HTML, CSS, JavaScript, and Three.js."
     />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -35,13 +36,14 @@
               <div class="instruction-panel">
                 <p class="instruction-label">Instructions</p>
                 <p class="instruction-text" id="status-message">
-                  Click anywhere in the panel to start. Wait for green, then click again as fast as you can.
+                  Click or press Space to start. Wait for green, then click or press Space again as fast as you can.
                 </p>
               </div>
 
               <div class="result-panel">
                 <p class="result-label">Reaction Time</p>
                 <p class="reaction-value" id="reaction-value">-- ms</p>
+                <p class="reaction-rating rating-neutral" id="reaction-rating">—</p>
               </div>
             </div>
 
@@ -74,10 +76,15 @@
               <p class="stat-label">False Starts</p>
               <p class="stat-value" id="false-start-count">0</p>
             </article>
+
+            <article class="stat-card stat-card-full">
+              <p class="stat-label">Last Rating</p>
+              <p class="stat-value" id="last-rating-value">—</p>
+            </article>
           </div>
 
           <div class="micro-copy">
-            <p>Click panel to start. Fair randomized delay. Immediate replay loop.</p>
+            <p>Click or press Space to start. Fair randomized delay. Immediate replay loop.</p>
           </div>
         </aside>
       </section>

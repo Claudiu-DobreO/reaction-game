@@ -4,10 +4,12 @@ const reactionZoneElement = document.getElementById("reaction-zone");
 const resetButtonElement = document.getElementById("reset-button");
 const statusMessageElement = document.getElementById("status-message");
 const reactionValueElement = document.getElementById("reaction-value");
+const reactionRatingElement = document.getElementById("reaction-rating");
 const bestValueElement = document.getElementById("best-value");
 const lastValueElement = document.getElementById("last-value");
 const attemptCountElement = document.getElementById("attempt-count");
 const falseStartCountElement = document.getElementById("false-start-count");
+const lastRatingValueElement = document.getElementById("last-rating-value");
 const sceneRootElement = document.getElementById("scene-root");
 
 const reactionScene = createReactionScene(sceneRootElement);
@@ -18,7 +20,31 @@ const appState = {
   signalStartTime: null,
   attempts: [],
   falseStarts: 0,
+  lastRating: null,
 };
+
+const ratingBands = [
+  {
+    maxMilliseconds: 220,
+    label: "Top Performer",
+    className: "rating-top",
+  },
+  {
+    maxMilliseconds: 280,
+    label: "Above Average",
+    className: "rating-above",
+  },
+  {
+    maxMilliseconds: 360,
+    label: "Average",
+    className: "rating-average",
+  },
+  {
+    maxMilliseconds: Number.POSITIVE_INFINITY,
+    label: "Below Average",
+    className: "rating-below",
+  },
+];
 
 function getRandomDelayMilliseconds() {
   const minimumDelayMilliseconds = 2000;
@@ -41,6 +67,29 @@ function clearPendingSignalTimeout() {
   }
 }
 
+function getReactionRating(milliseconds) {
+  return ratingBands.find((ratingBand) => milliseconds <= ratingBand.maxMilliseconds);
+}
+
+function updateRatingDisplay(rating) {
+  reactionRatingElement.classList.remove(
+    "rating-top",
+    "rating-above",
+    "rating-average",
+    "rating-below",
+    "rating-neutral"
+  );
+
+  if (!rating) {
+    reactionRatingElement.textContent = "—";
+    reactionRatingElement.classList.add("rating-neutral");
+    return;
+  }
+
+  reactionRatingElement.textContent = rating.label;
+  reactionRatingElement.classList.add(rating.className);
+}
+
 function updateStats() {
   const lastAttemptMilliseconds = appState.attempts.at(-1) ?? null;
   const bestAttemptMilliseconds =
@@ -58,6 +107,7 @@ function updateStats() {
 
   attemptCountElement.textContent = String(appState.attempts.length);
   falseStartCountElement.textContent = String(appState.falseStarts);
+  lastRatingValueElement.textContent = appState.lastRating ? appState.lastRating.label : "—";
 }
 
 function updateReactionZoneStateClass(phase) {
@@ -130,36 +180,41 @@ function setPhase(nextPhase) {
 function renderIdleState() {
   setPhase("idle");
   statusMessageElement.textContent =
-    "Click anywhere in the panel to start. Wait for green, then click again as fast as you can.";
+    "Click or press Space to start. Wait for green, then click or press Space again as fast as you can.";
   reactionValueElement.textContent = "-- ms";
+  updateRatingDisplay(appState.lastRating);
 }
 
 function renderWaitingState() {
   setPhase("waiting");
   statusMessageElement.textContent =
-    "Wait for green. Clicking early counts as a false start.";
+    "Wait for green. Clicking or pressing Space early counts as a false start.";
   reactionValueElement.textContent = "-- ms";
+  updateRatingDisplay(null);
 }
 
 function renderReadyState() {
   setPhase("ready");
-  statusMessageElement.textContent = "Click now.";
+  statusMessageElement.textContent = "Click or press Space now.";
   reactionValueElement.textContent = "GO";
+  updateRatingDisplay(null);
   appState.signalStartTime = performance.now();
 }
 
-function renderResultState(reactionTimeMilliseconds) {
+function renderResultState(reactionTimeMilliseconds, rating) {
   setPhase("result");
   statusMessageElement.textContent =
-    "Measured successfully. Click the panel to start again.";
+    "Measured successfully. Click or press Space to test again.";
   reactionValueElement.textContent = formatReactionTime(reactionTimeMilliseconds);
+  updateRatingDisplay(rating);
 }
 
 function renderFalseStartState() {
   setPhase("false-start");
   statusMessageElement.textContent =
-    "Too soon. Click the panel to try again.";
+    "Too soon. Click or press Space to try again.";
   reactionValueElement.textContent = "Too Soon";
+  updateRatingDisplay(null);
 }
 
 function beginTest() {
@@ -184,11 +239,14 @@ function handleSuccessfulReaction() {
   const reactionTimeMilliseconds =
     performance.now() - appState.signalStartTime;
 
+  const reactionRating = getReactionRating(reactionTimeMilliseconds);
+
   appState.attempts.push(reactionTimeMilliseconds);
   appState.signalStartTime = null;
+  appState.lastRating = reactionRating;
 
   updateStats();
-  renderResultState(reactionTimeMilliseconds);
+  renderResultState(reactionTimeMilliseconds, reactionRating);
 }
 
 function handleFalseStart() {
@@ -200,7 +258,7 @@ function handleFalseStart() {
   renderFalseStartState();
 }
 
-function handleReactionZoneActivation() {
+function activateReactionFlow() {
   if (appState.phase === "idle") {
     beginTest();
     return;
@@ -228,6 +286,7 @@ function resetSession() {
   appState.signalStartTime = null;
   appState.attempts = [];
   appState.falseStarts = 0;
+  appState.lastRating = null;
 
   updateStats();
   renderIdleState();
@@ -242,7 +301,30 @@ function handleReactionZoneKeydown(event) {
   }
 
   event.preventDefault();
-  handleReactionZoneActivation();
+  activateReactionFlow();
+}
+
+function handleGlobalKeydown(event) {
+  const isSpaceKey = event.code === "Space";
+
+  if (!isSpaceKey || event.repeat) {
+    return;
+  }
+
+  const activeElement = document.activeElement;
+  const activeTagName = activeElement ? activeElement.tagName : "";
+
+  if (
+    activeTagName === "INPUT" ||
+    activeTagName === "TEXTAREA" ||
+    activeTagName === "SELECT" ||
+    activeElement?.isContentEditable
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  activateReactionFlow();
 }
 
 resetButtonElement.addEventListener("click", (event) => {
@@ -250,8 +332,9 @@ resetButtonElement.addEventListener("click", (event) => {
   resetSession();
 });
 
-reactionZoneElement.addEventListener("click", handleReactionZoneActivation);
+reactionZoneElement.addEventListener("click", activateReactionFlow);
 reactionZoneElement.addEventListener("keydown", handleReactionZoneKeydown);
+window.addEventListener("keydown", handleGlobalKeydown);
 
 updateStats();
 renderIdleState();
